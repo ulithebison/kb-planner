@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="KB Planner">
+<meta name="theme-color" content="#0f0f0f">
+<title>KB Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f0f0f;
+  --bg2: #1a1a1a;
+  --bg3: #222;
+  --bg4: #2a2a2a;
+  --border: #333;
+  --border2: #444;
+  --txt: #f0ece4;
+  --txt2: #aaa;
+  --txt3: #666;
+  --accent: #e8922f;
+  --accent2: #f0a94e;
+  --green: #4ecb71;
+  --red: #e84a4a;
+  --blue: #5b9bf5;
+  --warmup: #f0a94e;
+  --main: #e8524a;
+  --cooldown: #5b9bf5;
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { background:var(--bg); color:var(--txt); font-family:'Archivo',sans-serif; -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+body { min-height:100vh; min-height:100dvh; padding-bottom:calc(70px + env(safe-area-inset-bottom)); }
+button { font-family:inherit; cursor:pointer; border:none; background:none; color:inherit; }
+input, select, textarea { font-family:inherit; color:var(--txt); background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 12px; font-size:14px; width:100%; outline:none; }
+input:focus, select:focus, textarea:focus { border-color:var(--accent); }
+select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23aaa' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:32px; }
+textarea { resize:vertical; min-height:60px; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+/* Header */
+.header { padding:calc(env(safe-area-inset-top) + 16px) 20px 12px; display:flex; align-items:center; justify-content:space-between; }
+.logo { font-weight:900; font-size:22px; letter-spacing:-.03em; }
+.logo span { color:var(--accent); }
+.header-actions { display:flex; gap:8px; }
+.icon-btn { width:38px; height:38px; border-radius:50%; background:var(--bg2); display:flex; align-items:center; justify-content:center; transition:background .2s; }
+.icon-btn:hover { background:var(--bg3); }
+.icon-btn svg { width:18px; height:18px; stroke:var(--txt2); fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+
+/* Bottom Nav */
+.nav { position:fixed; bottom:0; left:0; right:0; background:var(--bg2); border-top:1px solid var(--border); display:flex; padding-bottom:env(safe-area-inset-bottom); z-index:100; }
+.nav button { flex:1; padding:10px 0 8px; display:flex; flex-direction:column; align-items:center; gap:3px; transition:color .2s; color:var(--txt3); }
+.nav button.active { color:var(--accent); }
+.nav button svg { width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.nav-label { font-size:10px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; }
+
+/* Pages */
+.page { display:none; padding:0 16px 20px; max-width:600px; margin:0 auto; }
+.page.active { display:block; }
+
+/* Section titles */
+.sec-title { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--txt2); margin:20px 0 10px; }
+
+/* Cards */
+.card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:10px; }
+.card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.card-title { font-weight:700; font-size:15px; }
+.card-sub { font-size:12px; color:var(--txt2); }
+.card-actions { display:flex; gap:6px; }
+.card-btn { width:32px; height:32px; border-radius:8px; background:var(--bg3); display:flex; align-items:center; justify-content:center; transition:background .2s; }
+.card-btn:hover { background:var(--bg4); }
+.card-btn svg { width:16px; height:16px; stroke:var(--txt2); fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+
+/* Badges */
+.badge { display:inline-block; padding:2px 8px; border-radius:20px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+.badge-warmup { background:rgba(240,169,78,.15); color:var(--warmup); }
+.badge-main { background:rgba(232,82,74,.15); color:var(--main); }
+.badge-cooldown { background:rgba(91,155,245,.15); color:var(--cooldown); }
+
+/* Primary button */
+.btn { padding:12px 20px; border-radius:var(--radius-sm); font-weight:700; font-size:14px; transition:all .2s; }
+.btn-primary { background:var(--accent); color:#000; }
+.btn-primary:hover { background:var(--accent2); }
+.btn-secondary { background:var(--bg3); color:var(--txt); border:1px solid var(--border); }
+.btn-secondary:hover { background:var(--bg4); }
+.btn-danger { background:rgba(232,74,74,.15); color:var(--red); }
+.btn-block { width:100%; display:block; text-align:center; }
+.btn-sm { padding:8px 14px; font-size:12px; }
+
+/* WEEK PAGE */
+.week-grid { display:grid; gap:8px; }
+.day-card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:14px; cursor:pointer; transition:border-color .2s; }
+.day-card:hover { border-color:var(--border2); }
+.day-card.today { border-color:var(--accent); }
+.day-name { font-weight:800; font-size:13px; text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px; }
+.day-card.today .day-name { color:var(--accent); }
+.day-workout { font-size:13px; color:var(--txt2); }
+.day-workout .workout-name { color:var(--txt); font-weight:600; }
+.day-empty { font-size:12px; color:var(--txt3); font-style:italic; }
+.day-phases { display:flex; gap:4px; margin-top:6px; }
+.phase-dot { width:6px; height:6px; border-radius:50%; }
+
+/* WORKOUT PAGE */
+.workout-list { }
+.wo-card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:10px; cursor:pointer; transition:border-color .2s; }
+.wo-card:hover { border-color:var(--border2); }
+.wo-card-top { display:flex; align-items:center; justify-content:space-between; }
+.wo-name { font-weight:700; font-size:16px; }
+.wo-meta { font-size:12px; color:var(--txt2); margin-top:4px; }
+.wo-phases { display:flex; gap:6px; margin-top:8px; }
+.wo-phase { font-size:11px; font-weight:600; padding:3px 8px; border-radius:6px; }
+
+/* WORKOUT EDITOR */
+.editor-phase { margin-bottom:16px; }
+.phase-header { display:flex; align-items:center; gap:8px; margin-bottom:10px; padding:8px 12px; border-radius:var(--radius-sm); }
+.phase-header.warmup { background:rgba(240,169,78,.1); border-left:3px solid var(--warmup); }
+.phase-header.main { background:rgba(232,82,74,.1); border-left:3px solid var(--main); }
+.phase-header.cooldown { background:rgba(91,155,245,.1); border-left:3px solid var(--cooldown); }
+.phase-label { font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:.04em; }
+.phase-header.warmup .phase-label { color:var(--warmup); }
+.phase-header.main .phase-label { color:var(--main); }
+.phase-header.cooldown .phase-label { color:var(--cooldown); }
+.exercise-item { background:var(--bg3); border-radius:var(--radius-sm); padding:12px; margin-bottom:6px; display:flex; align-items:center; gap:10px; }
+.ex-grip { color:var(--txt3); cursor:grab; font-size:18px; user-select:none; }
+.ex-info { flex:1; }
+.ex-info-name { font-weight:600; font-size:14px; }
+.ex-info-detail { font-size:12px; color:var(--txt2); margin-top:2px; }
+.ex-remove { color:var(--txt3); padding:4px; }
+.ex-remove:hover { color:var(--red); }
+.add-ex-btn { width:100%; padding:10px; border:1px dashed var(--border); border-radius:var(--radius-sm); color:var(--txt3); font-size:13px; font-weight:600; transition:all .2s; margin-bottom:6px; }
+.add-ex-btn:hover { border-color:var(--accent); color:var(--accent); }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
+.form-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:8px; }
+.form-group { margin-bottom:8px; }
+.form-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.04em; color:var(--txt2); margin-bottom:4px; display:block; }
+
+/* TIMER PAGE */
+.timer-display { text-align:center; padding:30px 0 20px; }
+.timer-time { font-family:'JetBrains Mono',monospace; font-size:72px; font-weight:700; letter-spacing:-.02em; line-height:1; }
+.timer-time.running { color:var(--green); }
+.timer-time.paused { color:var(--accent); }
+.timer-label { font-size:14px; color:var(--txt2); margin-top:8px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; }
+.timer-round { font-size:16px; color:var(--txt2); margin-top:4px; }
+.timer-round span { color:var(--txt); font-weight:700; }
+.timer-phase-label { font-size:20px; font-weight:800; margin-top:8px; text-transform:uppercase; letter-spacing:.04em; }
+.timer-phase-label.work { color:var(--green); }
+.timer-phase-label.rest { color:var(--red); }
+.timer-controls { display:flex; justify-content:center; gap:12px; margin:20px 0; }
+.timer-ctrl { width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:all .2s; }
+.timer-ctrl svg { width:24px; height:24px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.timer-ctrl.play { background:var(--green); color:#000; }
+.timer-ctrl.play:hover { background:#5dd87f; }
+.timer-ctrl.pause { background:var(--accent); color:#000; }
+.timer-ctrl.stop { background:var(--bg3); color:var(--txt2); }
+.timer-ctrl.stop:hover { background:var(--bg4); }
+.timer-progress { width:100%; height:6px; background:var(--bg3); border-radius:3px; margin:10px 0 20px; overflow:hidden; }
+.timer-progress-bar { height:100%; border-radius:3px; transition:width .3s linear; background:var(--green); }
+.timer-modes { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.mode-card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:14px; cursor:pointer; transition:all .2s; text-align:left; }
+.mode-card:hover { border-color:var(--border2); }
+.mode-card.active { border-color:var(--accent); background:rgba(232,146,47,.06); }
+.mode-name { font-weight:700; font-size:14px; }
+.mode-desc { font-size:11px; color:var(--txt2); margin-top:3px; }
+.timer-config { margin-top:16px; }
+
+/* Modal / Overlay */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:200; display:none; align-items:flex-end; justify-content:center; backdrop-filter:blur(4px); }
+.modal-overlay.open { display:flex; }
+.modal { background:var(--bg2); border-top:1px solid var(--border); border-radius:var(--radius) var(--radius) 0 0; width:100%; max-width:600px; max-height:85vh; overflow-y:auto; padding:20px 16px calc(20px + env(safe-area-inset-bottom)); }
+.modal-title { font-weight:800; font-size:18px; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; }
+.modal-close { width:32px; height:32px; border-radius:50%; background:var(--bg3); display:flex; align-items:center; justify-content:center; }
+.modal-close svg { width:18px; height:18px; stroke:var(--txt2); fill:none; stroke-width:2; }
+
+/* Preset exercises */
+.preset-list { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+.preset-chip { padding:6px 12px; border-radius:20px; background:var(--bg3); font-size:12px; font-weight:600; cursor:pointer; transition:all .2s; border:1px solid transparent; }
+.preset-chip:hover { border-color:var(--accent); }
+
+/* Empty states */
+.empty { text-align:center; padding:40px 20px; color:var(--txt3); }
+.empty-icon { font-size:40px; margin-bottom:12px; }
+.empty-text { font-size:14px; margin-bottom:16px; }
+
+/* Animations */
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.card, .wo-card, .day-card { animation:fadeIn .3s ease; }
+
+/* Day assign modal */
+.assign-list { }
+.assign-item { padding:12px; background:var(--bg3); border-radius:var(--radius-sm); margin-bottom:6px; cursor:pointer; transition:all .2s; display:flex; align-items:center; justify-content:space-between; }
+.assign-item:hover { background:var(--bg4); }
+.assign-item.selected { border:1px solid var(--accent); background:rgba(232,146,47,.08); }
+.assign-name { font-weight:600; font-size:14px; }
+.assign-check { width:20px; height:20px; border-radius:50%; border:2px solid var(--border); display:flex; align-items:center; justify-content:center; }
+.assign-item.selected .assign-check { border-color:var(--accent); background:var(--accent); }
+
+/* Audio beep indicator */
+.beep-indicator { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:var(--accent); color:#000; font-weight:800; font-size:40px; padding:30px 50px; border-radius:20px; z-index:300; display:none; animation:beepPop .4s ease; }
+@keyframes beepPop { 0%{transform:translate(-50%,-50%) scale(.5);opacity:0} 50%{transform:translate(-50%,-50%) scale(1.1)} 100%{transform:translate(-50%,-50%) scale(1);opacity:1} }
+
+/* Workout runner */
+.runner-phase { margin-bottom:14px; }
+.runner-phase-head { display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:var(--radius-sm); margin-bottom:8px; }
+.runner-phase-head.warmup { background:rgba(240,169,78,.1); border-left:3px solid var(--warmup); }
+.runner-phase-head.main { background:rgba(232,82,74,.1); border-left:3px solid var(--main); }
+.runner-phase-head.cooldown { background:rgba(91,155,245,.1); border-left:3px solid var(--cooldown); }
+.runner-phase-label { font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:.04em; }
+.runner-phase-head.warmup .runner-phase-label { color:var(--warmup); }
+.runner-phase-head.main .runner-phase-label { color:var(--main); }
+.runner-phase-head.cooldown .runner-phase-label { color:var(--cooldown); }
+.runner-ex { display:flex; align-items:center; gap:10px; padding:10px 12px; background:var(--bg3); border-radius:var(--radius-sm); margin-bottom:4px; }
+.runner-ex-check { width:22px; height:22px; border-radius:6px; border:2px solid var(--border2); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all .2s; flex-shrink:0; }
+.runner-ex-check.done { background:var(--green); border-color:var(--green); }
+.runner-ex-info { flex:1; }
+.runner-ex-name { font-weight:600; font-size:14px; }
+.runner-ex-name.done { text-decoration:line-through; color:var(--txt3); }
+.runner-ex-detail { font-size:12px; color:var(--txt2); }
+.runner-ex.active { background:var(--bg4); border:1px solid var(--accent); }
+.runner-ex.completed .runner-ex-name { text-decoration:line-through; color:var(--txt3); }
+.runner-progress { text-align:center; padding:12px; background:var(--bg3); border-radius:var(--radius-sm); margin-bottom:12px; }
+.runner-progress-text { font-size:13px; color:var(--txt2); }
+.runner-progress-text span { color:var(--accent); font-weight:700; }
+
+/* Get Ready overlay */
+.get-ready-overlay { position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:400; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.get-ready-label { font-size:18px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin-bottom:12px; }
+.get-ready-count { font-family:'JetBrains Mono',monospace; font-size:120px; font-weight:700; color:var(--txt); line-height:1; animation:countPulse .9s ease infinite; }
+@keyframes countPulse { 0%{transform:scale(1)} 50%{transform:scale(1.08)} 100%{transform:scale(1)} }
+.get-ready-skip { margin-top:30px; font-size:13px; color:var(--txt3); text-decoration:underline; cursor:pointer; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="logo">KB<span>Planner</span></div>
+  <div class="header-actions">
+    <button class="icon-btn" onclick="showExportImport()" title="Export/Import">
+      <svg><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- WEEK PAGE -->
+<div id="page-week" class="page active">
+  <div class="sec-title">Diese Woche</div>
+  <div class="week-grid" id="weekGrid"></div>
+</div>
+
+<!-- WORKOUTS PAGE -->
+<div id="page-workouts" class="page">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <div class="sec-title" style="margin:0">Meine Workouts</div>
+    <button class="btn btn-primary btn-sm" onclick="openEditor()">+ Neu</button>
+  </div>
+  <div id="workoutList"></div>
+</div>
+
+<!-- TIMER PAGE -->
+<div id="page-timer" class="page">
+  <div class="sec-title">Timer</div>
+  <div class="timer-modes" id="timerModes">
+    <button class="mode-card active" data-mode="tabata" onclick="selectMode('tabata')">
+      <div class="mode-name">Tabata</div>
+      <div class="mode-desc">20s Work / 10s Rest</div>
+    </button>
+    <button class="mode-card" data-mode="emom" onclick="selectMode('emom')">
+      <div class="mode-name">EMOM</div>
+      <div class="mode-desc">Every Minute on the Minute</div>
+    </button>
+    <button class="mode-card" data-mode="amrap" onclick="selectMode('amrap')">
+      <div class="mode-name">AMRAP</div>
+      <div class="mode-desc">As Many Rounds As Possible</div>
+    </button>
+    <button class="mode-card" data-mode="interval" onclick="selectMode('interval')">
+      <div class="mode-name">Intervall</div>
+      <div class="mode-desc">Custom Work/Rest</div>
+    </button>
+    <button class="mode-card" data-mode="countdown" onclick="selectMode('countdown')">
+      <div class="mode-name">Countdown</div>
+      <div class="mode-desc">Einfacher Timer</div>
+    </button>
+    <button class="mode-card" data-mode="stopwatch" onclick="selectMode('stopwatch')">
+      <div class="mode-name">Stoppuhr</div>
+      <div class="mode-desc">Offenes Tracking</div>
+    </button>
+  </div>
+
+  <div class="timer-config" id="timerConfig"></div>
+
+  <div class="timer-display" id="timerDisplay" style="display:none;">
+    <div class="timer-phase-label" id="timerPhaseLabel"></div>
+    <div class="timer-time" id="timerTime">00:00</div>
+    <div class="timer-round" id="timerRound"></div>
+    <div class="timer-progress"><div class="timer-progress-bar" id="timerProgress"></div></div>
+    <div class="timer-controls">
+      <button class="timer-ctrl stop" onclick="resetTimer()">
+        <svg><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+      </button>
+      <button class="timer-ctrl play" id="timerPlayBtn" onclick="toggleTimer()">
+        <svg id="playIcon"><polygon points="10,8 16,12 10,16"/></svg>
+        <svg id="pauseIcon" style="display:none"><rect x="7" y="6" width="3" height="12"/><rect x="14" y="6" width="3" height="12"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <button class="btn btn-primary btn-block" id="startTimerBtn" onclick="startTimer()" style="margin-top:16px;">Timer starten</button>
+</div>
+
+<!-- Bottom Nav -->
+<nav class="nav">
+  <button class="active" onclick="switchPage('week')" data-page="week">
+    <svg><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <span class="nav-label">Woche</span>
+  </button>
+  <button onclick="switchPage('workouts')" data-page="workouts">
+    <svg><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+    <span class="nav-label">Workouts</span>
+  </button>
+  <button onclick="switchPage('timer')" data-page="timer">
+    <svg><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    <span class="nav-label">Timer</span>
+  </button>
+</nav>
+
+<!-- WORKOUT EDITOR MODAL -->
+<div class="modal-overlay" id="editorModal">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="editorTitle">Neues Workout</span>
+      <button class="modal-close" onclick="closeEditor()"><svg><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Workout-Name</label>
+      <input id="woName" placeholder="z.B. Kettlebell Komplex" />
+    </div>
+    <div id="editorPhases"></div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn btn-primary btn-block" onclick="saveWorkout()">Speichern</button>
+    </div>
+    <button class="btn btn-danger btn-block btn-sm" id="deleteWoBtn" style="margin-top:8px;display:none;" onclick="deleteWorkout()">Workout löschen</button>
+  </div>
+</div>
+
+<!-- ADD EXERCISE MODAL -->
+<div class="modal-overlay" id="exerciseModal">
+  <div class="modal">
+    <div class="modal-title">
+      <span>Übung hinzufügen</span>
+      <button class="modal-close" onclick="closeExerciseModal()"><svg><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <label class="form-label">Schnellauswahl</label>
+    <div class="preset-list" id="presetList"></div>
+    <div class="form-group">
+      <label class="form-label">Übungsname</label>
+      <input id="exName" placeholder="z.B. Two-Hand Swing" />
+    </div>
+    <div class="form-row-3">
+      <div><label class="form-label">Sätze</label><input id="exSets" type="number" min="1" value="3" /></div>
+      <div><label class="form-label">Wdh</label><input id="exReps" type="number" min="1" value="10" /></div>
+      <div><label class="form-label">Gewicht (kg)</label><input id="exWeight" type="number" min="0" value="16" /></div>
+    </div>
+    <div class="form-row">
+      <div><label class="form-label">Dauer (Sek)</label><input id="exDuration" type="number" min="0" value="0" placeholder="0" /></div>
+      <div><label class="form-label">Pause (Sek)</label><input id="exRest" type="number" min="0" value="30" /></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notizen</label>
+      <textarea id="exNotes" placeholder="Optional..."></textarea>
+    </div>
+    <button class="btn btn-primary btn-block" onclick="addExercise()">Hinzufügen</button>
+  </div>
+</div>
+
+<!-- WORKOUT DETAIL MODAL (from week view) -->
+<div class="modal-overlay" id="dayDetailModal">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="dayDetailTitle">Montag</span>
+      <button class="modal-close" onclick="closeDayDetail()"><svg><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div id="dayDetailContent"></div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn btn-primary btn-block" onclick="startWorkoutFromDay()">▶ Workout starten</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button class="btn btn-secondary btn-block btn-sm" onclick="closeDayDetail();openAssign(currentDetailDay)">Workout ändern</button>
+      <button class="btn btn-danger btn-block btn-sm" onclick="clearDayFromDetail()">Tag leeren</button>
+    </div>
+  </div>
+</div>
+
+<!-- WORKOUT RUNNER MODAL -->
+<div class="modal-overlay" id="runnerModal">
+  <div class="modal" style="max-height:95vh;">
+    <div class="modal-title">
+      <span id="runnerTitle">Workout</span>
+      <button class="modal-close" onclick="closeRunner()"><svg><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <!-- Timer display during workout -->
+    <div id="runnerTimerArea" style="display:none;">
+      <div id="runnerPhaseBadge" style="text-align:center;margin-bottom:8px;"></div>
+      <div style="text-align:center;">
+        <div id="runnerExName" style="font-weight:700;font-size:18px;margin-bottom:2px;"></div>
+        <div id="runnerSetInfo" style="font-size:13px;color:var(--txt2);"></div>
+      </div>
+      <div id="runnerTimerDisplay" style="text-align:center;padding:16px 0 8px;">
+        <div id="runnerTimerPhase" class="timer-phase-label"></div>
+        <div id="runnerTimerTime" class="timer-time" style="font-size:64px;">00:00</div>
+      </div>
+      <div class="timer-progress"><div class="timer-progress-bar" id="runnerTimerProgress"></div></div>
+      <div style="display:flex;justify-content:center;gap:12px;margin:12px 0;">
+        <button class="timer-ctrl stop" onclick="stopWorkoutTimer()">
+          <svg><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+        </button>
+        <button class="timer-ctrl play" id="runnerDoneBtn" onclick="runnerNextStep()" style="display:none;">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" stroke="currentColor" stroke-width="3" fill="none"/></svg>
+        </button>
+        <button class="timer-ctrl pause" id="runnerPauseBtn" onclick="toggleWorkoutTimer()" style="display:none;">
+          <svg id="woPauseIcon"><rect x="7" y="6" width="3" height="12"/><rect x="14" y="6" width="3" height="12"/></svg>
+          <svg id="woPlayIcon" style="display:none;"><polygon points="10,8 16,12 10,16"/></svg>
+        </button>
+      </div>
+    </div>
+    <!-- Exercise list -->
+    <div id="runnerContent"></div>
+    <!-- Start button (before timer is running) -->
+    <div id="runnerStartArea" style="margin-top:12px;">
+      <button class="btn btn-primary btn-block" onclick="startWorkoutTimer()">▶ Workout-Timer starten</button>
+    </div>
+  </div>
+</div>
+
+<!-- ASSIGN WORKOUT TO DAY MODAL -->
+<div class="modal-overlay" id="assignModal">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="assignTitle">Workout zuweisen</span>
+      <button class="modal-close" onclick="closeAssign()"><svg><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div id="assignList"></div>
+    <button class="btn btn-danger btn-block btn-sm" style="margin-top:10px;" onclick="clearDay()">Tag leeren</button>
+  </div>
+</div>
+
+<!-- EXPORT/IMPORT MODAL -->
+<div class="modal-overlay" id="exportModal">
+  <div class="modal">
+    <div class="modal-title">
+      <span>Export / Import</span>
+      <button class="modal-close" onclick="closeExportImport()"><svg><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <button class="btn btn-primary btn-block" onclick="exportData()" style="margin-bottom:10px;">📦 Daten exportieren (JSON)</button>
+    <button class="btn btn-secondary btn-block" onclick="document.getElementById('importFile').click()">📥 Daten importieren</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)" />
+    <p style="font-size:12px;color:var(--txt3);margin-top:12px;text-align:center;">Export sichert alle Workouts und den Wochenplan als JSON-Datei.</p>
+  </div>
+</div>
+
+<!-- Beep element -->
+<div class="beep-indicator" id="beepIndicator">GO!</div>
+<!-- Get Ready overlay -->
+<div class="get-ready-overlay" id="getReadyOverlay" style="display:none;">
+  <div class="get-ready-label">BEREIT MACHEN</div>
+  <div class="get-ready-count" id="getReadyCount">5</div>
+  <button class="get-ready-skip" onclick="skipGetReady()">Überspringen</button>
+</div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────
+const DAYS = ['mo','di','mi','do','fr','sa','so'];
+const DAY_LABELS = {mo:'Montag',di:'Dienstag',mi:'Mittwoch',do:'Donnerstag',fr:'Freitag',sa:'Samstag',so:'Sonntag'};
+const PRESETS = [
+  'Two-Hand Swing','One-Hand Swing','Goblet Squat','SA Deadlift','SA Press',
+  'SA Row','Clean','Push Press','Front Squat','Turkish Get-Up',
+  'Halo','Snatch','Windmill','Lunge','Hip Bridge',
+  'Farmer Walk','SA Clean & Press','Thruster','High Pull','Dead Clean'
+];
+
+let state = loadState();
+
+function defaultState() {
+  return { workouts: [], week: {mo:null,di:null,mi:null,do:null,fr:null,sa:null,so:null} };
+}
+function loadState() {
+  try { const s = JSON.parse(localStorage.getItem('kb_planner')); return s && s.workouts ? s : defaultState(); }
+  catch { return defaultState(); }
+}
+function save() { localStorage.setItem('kb_planner', JSON.stringify(state)); }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+// ─── NAV ─────────────────────────────────────────────────────
+function switchPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.nav button').forEach(b => b.classList.toggle('active', b.dataset.page===name));
+}
+
+// ─── WEEK PAGE ───────────────────────────────────────────────
+function renderWeek() {
+  const grid = document.getElementById('weekGrid');
+  const today = new Date().getDay(); // 0=Sun
+  const todayIdx = today === 0 ? 6 : today - 1;
+  grid.innerHTML = DAYS.map((d, i) => {
+    const woId = state.week[d];
+    const wo = woId ? state.workouts.find(w => w.id === woId) : null;
+    const isToday = i === todayIdx;
+    let content = '';
+    if (wo) {
+      const counts = [wo.phases.warmup.length, wo.phases.main.length, wo.phases.cooldown.length];
+      content = `<div class="day-workout"><span class="workout-name">${esc(wo.name)}</span></div>
+        <div class="day-phases">
+          ${counts[0]?'<div class="phase-dot" style="background:var(--warmup)"></div>':''}
+          ${counts[1]?'<div class="phase-dot" style="background:var(--main)"></div>':''}
+          ${counts[2]?'<div class="phase-dot" style="background:var(--cooldown)"></div>':''}
+        </div>`;
+    } else {
+      content = '<div class="day-empty">— Kein Workout —</div>';
+    }
+    return `<div class="day-card${isToday?' today':''}" onclick="${wo?`openDayDetail('${d}')`:`openAssign('${d}')`}">
+      <div class="day-name">${DAY_LABELS[d]}</div>${content}</div>`;
+  }).join('');
+}
+
+// ─── ASSIGN ──────────────────────────────────────────────────
+let assignDay = null;
+function openAssign(day) {
+  assignDay = day;
+  document.getElementById('assignTitle').textContent = DAY_LABELS[day] + ' — Workout wählen';
+  const list = document.getElementById('assignList');
+  if (!state.workouts.length) {
+    list.innerHTML = '<div class="empty"><div class="empty-text">Noch keine Workouts erstellt.</div></div>';
+  } else {
+    list.innerHTML = state.workouts.map(w => {
+      const sel = state.week[day] === w.id;
+      return `<div class="assign-item${sel?' selected':''}" onclick="assignWorkout('${w.id}')">
+        <span class="assign-name">${esc(w.name)}</span>
+        <div class="assign-check">${sel?'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':''}</div>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('assignModal').classList.add('open');
+}
+function assignWorkout(id) { state.week[assignDay] = id; save(); renderWeek(); closeAssign(); }
+function clearDay() { state.week[assignDay] = null; save(); renderWeek(); closeAssign(); }
+function closeAssign() { document.getElementById('assignModal').classList.remove('open'); }
+
+// ─── WORKOUTS PAGE ───────────────────────────────────────────
+function renderWorkouts() {
+  const list = document.getElementById('workoutList');
+  if (!state.workouts.length) {
+    list.innerHTML = '<div class="empty"><div class="empty-icon">🏋️</div><div class="empty-text">Noch keine Workouts erstellt.</div></div>';
+    return;
+  }
+  list.innerHTML = state.workouts.map(w => {
+    const total = w.phases.warmup.length + w.phases.main.length + w.phases.cooldown.length;
+    return `<div class="wo-card" onclick="openEditor('${w.id}')">
+      <div class="wo-card-top"><span class="wo-name">${esc(w.name)}</span></div>
+      <div class="wo-meta">${total} Übungen</div>
+      <div class="wo-phases">
+        ${w.phases.warmup.length?'<span class="wo-phase badge-warmup">'+w.phases.warmup.length+' Aufwärmen</span>':''}
+        ${w.phases.main.length?'<span class="wo-phase badge-main">'+w.phases.main.length+' Hauptteil</span>':''}
+        ${w.phases.cooldown.length?'<span class="wo-phase badge-cooldown">'+w.phases.cooldown.length+' Cooldown</span>':''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── WORKOUT EDITOR ──────────────────────────────────────────
+let editingId = null;
+let editorPhases = { warmup:[], main:[], cooldown:[] };
+let addingToPhase = null;
+
+function openEditor(id) {
+  if (id) {
+    const wo = state.workouts.find(w => w.id === id);
+    if (!wo) return;
+    editingId = id;
+    document.getElementById('woName').value = wo.name;
+    editorPhases = JSON.parse(JSON.stringify(wo.phases));
+    document.getElementById('editorTitle').textContent = 'Workout bearbeiten';
+    document.getElementById('deleteWoBtn').style.display = 'block';
+  } else {
+    editingId = null;
+    document.getElementById('woName').value = '';
+    editorPhases = { warmup:[], main:[], cooldown:[] };
+    document.getElementById('editorTitle').textContent = 'Neues Workout';
+    document.getElementById('deleteWoBtn').style.display = 'none';
+  }
+  renderEditorPhases();
+  document.getElementById('editorModal').classList.add('open');
+}
+function closeEditor() { document.getElementById('editorModal').classList.remove('open'); }
+
+function renderEditorPhases() {
+  const container = document.getElementById('editorPhases');
+  const phases = [
+    { key:'warmup', label:'Aufwärmen', cls:'warmup' },
+    { key:'main', label:'Hauptteil', cls:'main' },
+    { key:'cooldown', label:'Cooldown', cls:'cooldown' }
+  ];
+  container.innerHTML = phases.map(p => {
+    const exercises = editorPhases[p.key];
+    return `<div class="editor-phase">
+      <div class="phase-header ${p.cls}"><span class="phase-label">${p.label}</span></div>
+      ${exercises.map((ex, i) => `
+        <div class="exercise-item">
+          <span class="ex-grip">⠿</span>
+          <div class="ex-info">
+            <div class="ex-info-name">${esc(ex.name)}</div>
+            <div class="ex-info-detail">${formatExDetail(ex)}</div>
+          </div>
+          <button class="ex-remove" onclick="removeExercise('${p.key}',${i})">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>`).join('')}
+      <button class="add-ex-btn" onclick="openExerciseModal('${p.key}')">+ Übung hinzufügen</button>
+    </div>`;
+  }).join('');
+}
+
+function formatExDetail(ex) {
+  let parts = [];
+  if (ex.sets && ex.reps) parts.push(ex.sets+'×'+ex.reps);
+  if (ex.weight) parts.push(ex.weight+'kg');
+  if (ex.duration) parts.push(ex.duration+'s');
+  if (ex.rest) parts.push(ex.rest+'s Pause');
+  return parts.join(' · ') || '';
+}
+
+function removeExercise(phase, idx) { editorPhases[phase].splice(idx, 1); renderEditorPhases(); }
+
+function saveWorkout() {
+  const name = document.getElementById('woName').value.trim();
+  if (!name) { document.getElementById('woName').style.borderColor='var(--red)'; return; }
+  if (editingId) {
+    const wo = state.workouts.find(w => w.id === editingId);
+    if (wo) { wo.name = name; wo.phases = editorPhases; }
+  } else {
+    state.workouts.push({ id:uid(), name, phases:editorPhases });
+  }
+  save(); renderWorkouts(); renderWeek(); closeEditor();
+}
+
+function deleteWorkout() {
+  if (!editingId) return;
+  if (!confirm('Workout wirklich löschen?')) return;
+  state.workouts = state.workouts.filter(w => w.id !== editingId);
+  DAYS.forEach(d => { if (state.week[d] === editingId) state.week[d] = null; });
+  save(); renderWorkouts(); renderWeek(); closeEditor();
+}
+
+// ─── EXERCISE MODAL ──────────────────────────────────────────
+function openExerciseModal(phase) {
+  addingToPhase = phase;
+  document.getElementById('exName').value = '';
+  document.getElementById('exSets').value = '3';
+  document.getElementById('exReps').value = '10';
+  document.getElementById('exWeight').value = '16';
+  document.getElementById('exDuration').value = '0';
+  document.getElementById('exRest').value = '30';
+  document.getElementById('exNotes').value = '';
+  renderPresets();
+  document.getElementById('exerciseModal').classList.add('open');
+}
+function closeExerciseModal() { document.getElementById('exerciseModal').classList.remove('open'); }
+
+function renderPresets() {
+  document.getElementById('presetList').innerHTML = PRESETS.map(p =>
+    `<button class="preset-chip" onclick="document.getElementById('exName').value='${p}'">${p}</button>`
+  ).join('');
+}
+
+function addExercise() {
+  const name = document.getElementById('exName').value.trim();
+  if (!name) return;
+  editorPhases[addingToPhase].push({
+    name,
+    sets: parseInt(document.getElementById('exSets').value)||0,
+    reps: parseInt(document.getElementById('exReps').value)||0,
+    weight: parseInt(document.getElementById('exWeight').value)||0,
+    duration: parseInt(document.getElementById('exDuration').value)||0,
+    rest: parseInt(document.getElementById('exRest').value)||0,
+    notes: document.getElementById('exNotes').value.trim()
+  });
+  closeExerciseModal();
+  renderEditorPhases();
+}
+
+// ─── TIMER ───────────────────────────────────────────────────
+let timerMode = 'tabata';
+let timerInterval = null;
+let timerRunning = false;
+let timerState = null;
+let prepTime = parseInt(localStorage.getItem('kb_prepTime')) || 5;
+let prepInterval = null;
+
+const TIMER_DEFAULTS = {
+  tabata: { work:20, rest:10, rounds:8 },
+  emom: { interval:60, rounds:10 },
+  amrap: { duration:600 },
+  interval: { work:40, rest:20, rounds:5 },
+  countdown: { duration:300 },
+  stopwatch: {}
+};
+
+function selectMode(mode) {
+  timerMode = mode;
+  document.querySelectorAll('.mode-card').forEach(c => c.classList.toggle('active', c.dataset.mode===mode));
+  renderTimerConfig();
+  resetTimerDisplay();
+}
+
+function renderTimerConfig() {
+  const cfg = document.getElementById('timerConfig');
+  const d = TIMER_DEFAULTS[timerMode];
+  let html = '';
+  switch(timerMode) {
+    case 'tabata':
+      html = `<div class="form-row-3">
+        <div><label class="form-label">Work (s)</label><input id="cfgWork" type="number" value="${d.work}" min="1"/></div>
+        <div><label class="form-label">Rest (s)</label><input id="cfgRest" type="number" value="${d.rest}" min="1"/></div>
+        <div><label class="form-label">Runden</label><input id="cfgRounds" type="number" value="${d.rounds}" min="1"/></div>
+      </div>`; break;
+    case 'emom':
+      html = `<div class="form-row">
+        <div><label class="form-label">Intervall (s)</label><input id="cfgInterval" type="number" value="${d.interval}" min="10"/></div>
+        <div><label class="form-label">Runden</label><input id="cfgRounds" type="number" value="${d.rounds}" min="1"/></div>
+      </div>`; break;
+    case 'amrap':
+      html = `<div class="form-group"><label class="form-label">Dauer (Minuten)</label><input id="cfgDuration" type="number" value="${d.duration/60}" min="1"/></div>`; break;
+    case 'interval':
+      html = `<div class="form-row-3">
+        <div><label class="form-label">Work (s)</label><input id="cfgWork" type="number" value="${d.work}" min="1"/></div>
+        <div><label class="form-label">Rest (s)</label><input id="cfgRest" type="number" value="${d.rest}" min="1"/></div>
+        <div><label class="form-label">Runden</label><input id="cfgRounds" type="number" value="${d.rounds}" min="1"/></div>
+      </div>`; break;
+    case 'countdown':
+      html = `<div class="form-group"><label class="form-label">Dauer (Minuten)</label><input id="cfgDuration" type="number" value="${d.duration/60}" min="1"/></div>`; break;
+    case 'stopwatch':
+      html = `<p style="font-size:13px;color:var(--txt3);padding:10px 0;">Läuft bis du stoppst.</p>`; break;
+  }
+  // Preparation time for all modes
+  html += `<div class="form-group" style="margin-top:10px;">
+    <label class="form-label">⏱ Vorbereitung (Sekunden)</label>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <input id="cfgPrep" type="range" min="0" max="15" value="${prepTime}" style="flex:1;accent-color:var(--accent);" oninput="document.getElementById('prepVal').textContent=this.value+'s';prepTime=parseInt(this.value);localStorage.setItem('kb_prepTime',prepTime);">
+      <span id="prepVal" style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;min-width:28px;text-align:right;">${prepTime}s</span>
+    </div>
+  </div>`;
+  cfg.innerHTML = html;
+}
+
+function resetTimerDisplay() {
+  document.getElementById('timerDisplay').style.display = 'none';
+  document.getElementById('startTimerBtn').style.display = 'block';
+  document.getElementById('timerConfig').style.display = 'block';
+  document.getElementById('timerModes').style.display = 'grid';
+}
+
+function startTimer() {
+  let cfg = {};
+  switch(timerMode) {
+    case 'tabata': case 'interval':
+      cfg = { work:getNum('cfgWork',20), rest:getNum('cfgRest',10), rounds:getNum('cfgRounds',8) }; break;
+    case 'emom':
+      cfg = { interval:getNum('cfgInterval',60), rounds:getNum('cfgRounds',10) }; break;
+    case 'amrap':
+      cfg = { duration:getNum('cfgDuration',10)*60 }; break;
+    case 'countdown':
+      cfg = { duration:getNum('cfgDuration',5)*60 }; break;
+    case 'stopwatch':
+      cfg = {}; break;
+  }
+  initTimer(timerMode, cfg);
+  document.getElementById('timerDisplay').style.display = 'block';
+  document.getElementById('startTimerBtn').style.display = 'none';
+  document.getElementById('timerConfig').style.display = 'none';
+  document.getElementById('timerModes').style.display = 'none';
+
+  if (prepTime > 0) {
+    showGetReady(prepTime, () => toggleTimer());
+  } else {
+    toggleTimer();
+  }
+}
+
+// Get Ready countdown
+let getReadyRemaining = 0;
+let getReadyCallback = null;
+
+function showGetReady(seconds, callback) {
+  getReadyRemaining = seconds;
+  getReadyCallback = callback;
+  const overlay = document.getElementById('getReadyOverlay');
+  const countEl = document.getElementById('getReadyCount');
+  overlay.style.display = 'flex';
+  countEl.textContent = getReadyRemaining;
+  beepShort();
+  prepInterval = setInterval(() => {
+    getReadyRemaining--;
+    if (getReadyRemaining <= 0) {
+      clearInterval(prepInterval);
+      prepInterval = null;
+      overlay.style.display = 'none';
+      beep();
+      if (getReadyCallback) getReadyCallback();
+    } else {
+      countEl.textContent = getReadyRemaining;
+      if (getReadyRemaining <= 3) beepShort();
+    }
+  }, 1000);
+}
+
+function skipGetReady() {
+  if (prepInterval) clearInterval(prepInterval);
+  prepInterval = null;
+  document.getElementById('getReadyOverlay').style.display = 'none';
+  beep();
+  if (getReadyCallback) getReadyCallback();
+}
+
+function initTimer(mode, cfg) {
+  if (timerInterval) clearInterval(timerInterval);
+  timerRunning = false;
+  switch(mode) {
+    case 'tabata': case 'interval':
+      timerState = { mode, round:1, totalRounds:cfg.rounds, phase:'work',
+        phaseTime:cfg.work, phaseElapsed:0, workTime:cfg.work, restTime:cfg.rest,
+        total:cfg.rounds*(cfg.work+cfg.rest), elapsed:0 }; break;
+    case 'emom':
+      timerState = { mode, round:1, totalRounds:cfg.rounds, phase:'work',
+        phaseTime:cfg.interval, phaseElapsed:0, interval:cfg.interval,
+        total:cfg.rounds*cfg.interval, elapsed:0 }; break;
+    case 'amrap':
+      timerState = { mode, total:cfg.duration, elapsed:0, round:0 }; break;
+    case 'countdown':
+      timerState = { mode, total:cfg.duration, elapsed:0 }; break;
+    case 'stopwatch':
+      timerState = { mode, elapsed:0 }; break;
+  }
+  updateTimerUI();
+}
+
+function toggleTimer() {
+  if (timerRunning) {
+    clearInterval(timerInterval);
+    timerRunning = false;
+    document.getElementById('playIcon').style.display = '';
+    document.getElementById('pauseIcon').style.display = 'none';
+    document.getElementById('timerPlayBtn').className = 'timer-ctrl play';
+    document.getElementById('timerTime').className = 'timer-time paused';
+  } else {
+    timerRunning = true;
+    document.getElementById('playIcon').style.display = 'none';
+    document.getElementById('pauseIcon').style.display = '';
+    document.getElementById('timerPlayBtn').className = 'timer-ctrl pause';
+    document.getElementById('timerTime').className = 'timer-time running';
+    timerInterval = setInterval(timerTick, 1000);
+  }
+}
+
+function timerTick() {
+  const s = timerState;
+  if (s.mode === 'stopwatch') {
+    s.elapsed++;
+    updateTimerUI();
+    return;
+  }
+  if (s.mode === 'countdown' || s.mode === 'amrap') {
+    s.elapsed++;
+    if (s.elapsed >= s.total) { finishTimer(); return; }
+    updateTimerUI();
+    return;
+  }
+  // tabata, interval, emom
+  s.elapsed++;
+  s.phaseElapsed++;
+  if (s.phaseElapsed >= s.phaseTime) {
+    if (s.mode === 'emom') {
+      if (s.round >= s.totalRounds) { finishTimer(); return; }
+      s.round++; s.phaseElapsed = 0;
+      beep();
+    } else {
+      if (s.phase === 'work') {
+        s.phase = 'rest'; s.phaseTime = s.restTime; s.phaseElapsed = 0;
+        beep();
+      } else {
+        if (s.round >= s.totalRounds) { finishTimer(); return; }
+        s.round++; s.phase = 'work'; s.phaseTime = s.workTime; s.phaseElapsed = 0;
+        beep();
+      }
+    }
+  }
+  // beep at 3,2,1
+  const remaining = s.phaseTime - s.phaseElapsed;
+  if (remaining <= 3 && remaining > 0) beepShort();
+  updateTimerUI();
+}
+
+function updateTimerUI() {
+  const s = timerState;
+  const timeEl = document.getElementById('timerTime');
+  const roundEl = document.getElementById('timerRound');
+  const phaseEl = document.getElementById('timerPhaseLabel');
+  const progEl = document.getElementById('timerProgress');
+  if (s.mode === 'stopwatch') {
+    timeEl.textContent = fmtTime(s.elapsed);
+    roundEl.textContent = '';
+    phaseEl.textContent = 'Stoppuhr';
+    phaseEl.className = 'timer-phase-label';
+    progEl.style.width = '0%';
+  } else if (s.mode === 'countdown') {
+    const rem = s.total - s.elapsed;
+    timeEl.textContent = fmtTime(Math.max(0,rem));
+    roundEl.textContent = '';
+    phaseEl.textContent = 'Countdown';
+    phaseEl.className = 'timer-phase-label';
+    progEl.style.width = ((s.elapsed/s.total)*100)+'%';
+  } else if (s.mode === 'amrap') {
+    const rem = s.total - s.elapsed;
+    timeEl.textContent = fmtTime(Math.max(0,rem));
+    roundEl.innerHTML = 'Runden: <span>'+s.round+'</span>';
+    phaseEl.textContent = 'AMRAP';
+    phaseEl.className = 'timer-phase-label work';
+    progEl.style.width = ((s.elapsed/s.total)*100)+'%';
+  } else if (s.mode === 'emom') {
+    const rem = s.phaseTime - s.phaseElapsed;
+    timeEl.textContent = fmtTime(Math.max(0,rem));
+    roundEl.innerHTML = 'Runde <span>'+s.round+'</span> / '+s.totalRounds;
+    phaseEl.textContent = 'EMOM';
+    phaseEl.className = 'timer-phase-label work';
+    progEl.style.width = ((s.phaseElapsed/s.phaseTime)*100)+'%';
+  } else {
+    const rem = s.phaseTime - s.phaseElapsed;
+    timeEl.textContent = fmtTime(Math.max(0,rem));
+    roundEl.innerHTML = 'Runde <span>'+s.round+'</span> / '+s.totalRounds;
+    phaseEl.textContent = s.phase === 'work' ? 'WORK' : 'REST';
+    phaseEl.className = 'timer-phase-label ' + s.phase;
+    progEl.style.width = ((s.phaseElapsed/s.phaseTime)*100)+'%';
+    document.getElementById('timerProgress').parentElement.querySelector('.timer-progress-bar').style.background =
+      s.phase === 'work' ? 'var(--green)' : 'var(--red)';
+  }
+}
+
+function finishTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  document.getElementById('playIcon').style.display = '';
+  document.getElementById('pauseIcon').style.display = 'none';
+  document.getElementById('timerPlayBtn').className = 'timer-ctrl play';
+  document.getElementById('timerTime').className = 'timer-time';
+  document.getElementById('timerTime').textContent = '✓ DONE';
+  document.getElementById('timerPhaseLabel').textContent = 'FERTIG';
+  document.getElementById('timerPhaseLabel').className = 'timer-phase-label';
+  beepLong();
+}
+
+function resetTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  if (prepInterval) { clearInterval(prepInterval); prepInterval = null; }
+  document.getElementById('getReadyOverlay').style.display = 'none';
+  timerRunning = false;
+  timerState = null;
+  resetTimerDisplay();
+}
+
+function fmtTime(s) {
+  const m = Math.floor(s/60);
+  const sec = s%60;
+  return String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+}
+
+// ─── AUDIO ───────────────────────────────────────────────────
+let audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+// Unlock audio on first user tap (required for iOS)
+document.addEventListener('touchstart', ensureAudio, { once: true });
+document.addEventListener('click', ensureAudio, { once: true });
+
+function playBeep(freq, dur, vol) {
+  ensureAudio();
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.frequency.value = freq;
+  osc.type = 'square';
+  gain.gain.setValueAtTime(vol || 0.5, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+  osc.start(); osc.stop(audioCtx.currentTime + dur);
+}
+function beep() {
+  playBeep(880, 0.25, 0.6);
+  setTimeout(() => playBeep(1100, 0.2, 0.6), 150);
+  if (navigator.vibrate) navigator.vibrate(200);
+}
+function beepShort() {
+  playBeep(660, 0.12, 0.4);
+  if (navigator.vibrate) navigator.vibrate(80);
+}
+function beepLong() {
+  playBeep(880, 0.4, 0.7);
+  setTimeout(() => playBeep(1100, 0.4, 0.7), 250);
+  setTimeout(() => playBeep(1320, 0.6, 0.7), 500);
+  if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
+}
+
+// ─── DAY DETAIL ──────────────────────────────────────────────
+let currentDetailDay = null;
+
+function openDayDetail(day) {
+  currentDetailDay = day;
+  const woId = state.week[day];
+  const wo = woId ? state.workouts.find(w => w.id === woId) : null;
+  if (!wo) { openAssign(day); return; }
+  document.getElementById('dayDetailTitle').textContent = DAY_LABELS[day] + ' — ' + esc(wo.name);
+  const phases = [
+    { key:'warmup', label:'Aufwärmen', cls:'warmup' },
+    { key:'main', label:'Hauptteil', cls:'main' },
+    { key:'cooldown', label:'Cooldown', cls:'cooldown' }
+  ];
+  let html = '';
+  phases.forEach(p => {
+    if (!wo.phases[p.key].length) return;
+    html += `<div class="runner-phase">
+      <div class="runner-phase-head ${p.cls}"><span class="runner-phase-label">${p.label}</span></div>`;
+    wo.phases[p.key].forEach(ex => {
+      html += `<div class="runner-ex">
+        <div class="ex-info">
+          <div class="runner-ex-name">${esc(ex.name)}</div>
+          <div class="runner-ex-detail">${formatExDetail(ex)}</div>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  document.getElementById('dayDetailContent').innerHTML = html;
+  document.getElementById('dayDetailModal').classList.add('open');
+}
+function closeDayDetail() { document.getElementById('dayDetailModal').classList.remove('open'); }
+function clearDayFromDetail() { state.week[currentDetailDay] = null; save(); renderWeek(); closeDayDetail(); }
+
+// ─── WORKOUT RUNNER (Timer-driven) ──────────────────────────
+let runnerExercises = [];
+let woSteps = [];       // flattened: one entry per exercise×set
+let woStepIdx = 0;
+let woPhase = 'idle';   // idle | work | rest | done
+let woCountdown = 0;
+let woInterval = null;
+let woPaused = false;
+
+function startWorkoutFromDay() {
+  closeDayDetail();
+  const woId = state.week[currentDetailDay];
+  const wo = woId ? state.workouts.find(w => w.id === woId) : null;
+  if (!wo) return;
+  // Build flat exercise list + steps (one per set)
+  runnerExercises = [];
+  woSteps = [];
+  const phases = [
+    { key:'warmup', label:'Aufwärmen', cls:'warmup' },
+    { key:'main', label:'Hauptteil', cls:'main' },
+    { key:'cooldown', label:'Cooldown', cls:'cooldown' }
+  ];
+  phases.forEach(p => {
+    wo.phases[p.key].forEach((ex, ei) => {
+      const exIdx = runnerExercises.length;
+      runnerExercises.push({ ...ex, phase:p.key, phaseLabel:p.label, phaseCls:p.cls, done:false });
+      const sets = Math.max(ex.sets || 1, 1);
+      for (let s = 1; s <= sets; s++) {
+        woSteps.push({
+          exIdx, set:s, totalSets:sets,
+          name:ex.name, reps:ex.reps||0, duration:ex.duration||0,
+          rest:ex.rest||0, weight:ex.weight||0,
+          phase:p.key, phaseLabel:p.label, phaseCls:p.cls,
+          notes:ex.notes||''
+        });
+      }
+    });
+  });
+  woStepIdx = 0;
+  woPhase = 'idle';
+  woPaused = false;
+  document.getElementById('runnerTitle').textContent = wo.name;
+  document.getElementById('runnerTimerArea').style.display = 'none';
+  document.getElementById('runnerStartArea').style.display = 'block';
+  renderRunnerList();
+  document.getElementById('runnerModal').classList.add('open');
+}
+
+function renderRunnerList() {
+  const container = document.getElementById('runnerContent');
+  let html = '';
+  let currentPhase = null;
+  runnerExercises.forEach((ex, i) => {
+    if (ex.phase !== currentPhase) {
+      currentPhase = ex.phase;
+      html += `<div class="runner-phase-head ${ex.phaseCls}"><span class="runner-phase-label">${ex.phaseLabel}</span></div>`;
+    }
+    const isActive = woPhase !== 'idle' && woPhase !== 'done' && woSteps[woStepIdx]?.exIdx === i;
+    const isDone = ex.done;
+    html += `<div class="runner-ex${isActive?' active':''}${isDone?' completed':''}">
+      <div class="runner-ex-check ${isDone?'done':''}">
+        ${isDone?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':''}
+      </div>
+      <div class="runner-ex-info">
+        <div class="runner-ex-name${isDone?' done':''}">${esc(ex.name)}</div>
+        <div class="runner-ex-detail">${formatExDetail(ex)}</div>
+      </div>
+    </div>`;
+  });
+  if (woPhase === 'done') {
+    html += `<div style="text-align:center;padding:20px;"><span style="font-size:32px;">🎉</span><div style="font-weight:700;font-size:16px;margin-top:8px;">Workout abgeschlossen!</div></div>`;
+  }
+  container.innerHTML = html;
+  // scroll active into view
+  const activeEl = container.querySelector('.runner-ex.active');
+  if (activeEl) activeEl.scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
+function startWorkoutTimer() {
+  document.getElementById('runnerStartArea').style.display = 'none';
+  document.getElementById('runnerTimerArea').style.display = 'block';
+  woStepIdx = 0;
+  if (prepTime > 0) {
+    showGetReady(prepTime, () => beginWorkStep());
+  } else {
+    beginWorkStep();
+  }
+}
+
+function beginWorkStep() {
+  if (woStepIdx >= woSteps.length) { finishWorkout(); return; }
+  const step = woSteps[woStepIdx];
+  woPhase = 'work';
+  woPaused = false;
+  updateRunnerTimerUI();
+  renderRunnerList();
+  beep();
+
+  if (step.duration > 0) {
+    // timed exercise - auto countdown
+    woCountdown = step.duration;
+    showRunnerPauseBtn(true);
+    showRunnerDoneBtn(false);
+    updateRunnerTimerUI();
+    woInterval = setInterval(woTimerTick, 1000);
+  } else {
+    // rep-based - show reps, wait for manual "done" tap
+    woCountdown = 0;
+    showRunnerPauseBtn(false);
+    showRunnerDoneBtn(true);
+    updateRunnerTimerUI();
+  }
+}
+
+function woTimerTick() {
+  if (woPaused) return;
+  woCountdown--;
+  if (woCountdown <= 3 && woCountdown > 0) beepShort();
+  if (woCountdown <= 0) {
+    clearInterval(woInterval);
+    woInterval = null;
+    beep();
+    if (woPhase === 'work') {
+      beginRestPhase();
+    } else {
+      advanceStep();
+    }
+  }
+  updateRunnerTimerUI();
+}
+
+function runnerNextStep() {
+  // manual "done" button for rep-based exercises
+  if (woPhase === 'work') {
+    beginRestPhase();
+  }
+}
+
+function beginRestPhase() {
+  const step = woSteps[woStepIdx];
+  if (step.rest > 0) {
+    woPhase = 'rest';
+    woCountdown = step.rest;
+    showRunnerPauseBtn(true);
+    showRunnerDoneBtn(false);
+    updateRunnerTimerUI();
+    woInterval = setInterval(woTimerTick, 1000);
+  } else {
+    advanceStep();
+  }
+}
+
+function advanceStep() {
+  // Mark exercise done if this was the last set
+  const step = woSteps[woStepIdx];
+  if (step.set === step.totalSets) {
+    runnerExercises[step.exIdx].done = true;
+  }
+  woStepIdx++;
+  if (woStepIdx >= woSteps.length) {
+    finishWorkout();
+  } else {
+    beginWorkStep();
+  }
+}
+
+function finishWorkout() {
+  woPhase = 'done';
+  if (woInterval) { clearInterval(woInterval); woInterval = null; }
+  document.getElementById('runnerTimerPhase').textContent = 'FERTIG';
+  document.getElementById('runnerTimerPhase').className = 'timer-phase-label';
+  document.getElementById('runnerTimerTime').textContent = '✓ DONE';
+  document.getElementById('runnerTimerTime').className = 'timer-time';
+  showRunnerPauseBtn(false);
+  showRunnerDoneBtn(false);
+  document.getElementById('runnerTimerProgress').style.width = '100%';
+  beepLong();
+  renderRunnerList();
+}
+
+function updateRunnerTimerUI() {
+  const step = woSteps[woStepIdx];
+  if (!step) return;
+  // Phase badge
+  const badgeEl = document.getElementById('runnerPhaseBadge');
+  badgeEl.innerHTML = `<span class="badge badge-${step.phaseCls}">${step.phaseLabel}</span>`;
+  // Exercise name
+  document.getElementById('runnerExName').textContent = step.name;
+  // Set info
+  let setTxt = step.totalSets > 1 ? `Satz ${step.set} / ${step.totalSets}` : '';
+  if (step.reps > 0) setTxt += (setTxt?' · ':'') + step.reps + ' Wdh';
+  if (step.weight > 0) setTxt += (setTxt?' · ':'') + step.weight + 'kg';
+  document.getElementById('runnerSetInfo').textContent = setTxt;
+  // Timer
+  const timeEl = document.getElementById('runnerTimerTime');
+  const phaseEl = document.getElementById('runnerTimerPhase');
+  const progEl = document.getElementById('runnerTimerProgress');
+
+  if (woPhase === 'work') {
+    phaseEl.textContent = step.duration > 0 ? 'WORK' : 'REPS';
+    phaseEl.className = 'timer-phase-label work';
+    if (step.duration > 0) {
+      timeEl.textContent = fmtTime(woCountdown);
+      timeEl.className = 'timer-time running';
+      progEl.style.width = (((step.duration - woCountdown) / step.duration) * 100) + '%';
+      progEl.style.background = 'var(--green)';
+    } else {
+      timeEl.textContent = step.reps > 0 ? step.reps + '×' : '—';
+      timeEl.className = 'timer-time';
+      progEl.style.width = '0%';
+    }
+  } else if (woPhase === 'rest') {
+    phaseEl.textContent = 'PAUSE';
+    phaseEl.className = 'timer-phase-label rest';
+    timeEl.textContent = fmtTime(woCountdown);
+    timeEl.className = 'timer-time paused';
+    progEl.style.width = (((step.rest - woCountdown) / step.rest) * 100) + '%';
+    progEl.style.background = 'var(--red)';
+  }
+  // Overall progress
+  const totalSteps = woSteps.length;
+  const overallProg = document.getElementById('runnerPhaseBadge');
+  overallProg.innerHTML += ` <span style="font-size:11px;color:var(--txt3);margin-left:8px;">Schritt ${woStepIdx+1}/${totalSteps}</span>`;
+}
+
+function toggleWorkoutTimer() {
+  woPaused = !woPaused;
+  document.getElementById('woPauseIcon').style.display = woPaused ? 'none' : '';
+  document.getElementById('woPlayIcon').style.display = woPaused ? '' : 'none';
+  document.getElementById('runnerTimerTime').className = woPaused ? 'timer-time paused' : 'timer-time running';
+}
+
+function stopWorkoutTimer() {
+  if (woInterval) { clearInterval(woInterval); woInterval = null; }
+  woPhase = 'idle';
+  woPaused = false;
+  document.getElementById('runnerTimerArea').style.display = 'none';
+  document.getElementById('runnerStartArea').style.display = 'block';
+  showRunnerPauseBtn(false);
+  showRunnerDoneBtn(false);
+  // reset done states
+  runnerExercises.forEach(e => e.done = false);
+  renderRunnerList();
+}
+
+function showRunnerDoneBtn(show) {
+  document.getElementById('runnerDoneBtn').style.display = show ? '' : 'none';
+}
+function showRunnerPauseBtn(show) {
+  document.getElementById('runnerPauseBtn').style.display = show ? '' : 'none';
+  document.getElementById('woPauseIcon').style.display = '';
+  document.getElementById('woPlayIcon').style.display = 'none';
+}
+
+function closeRunner() {
+  if (woInterval) { clearInterval(woInterval); woInterval = null; }
+  woPhase = 'idle';
+  document.getElementById('runnerModal').classList.remove('open');
+}
+
+// AMRAP round counter
+document.addEventListener('click', e => {
+  if (timerState && timerState.mode === 'amrap' && timerRunning) {
+    const display = document.getElementById('timerDisplay');
+    if (display.contains(e.target) && !e.target.closest('.timer-ctrl')) {
+      timerState.round++;
+      updateTimerUI();
+    }
+  }
+});
+
+// ─── EXPORT / IMPORT ─────────────────────────────────────────
+function showExportImport() { document.getElementById('exportModal').classList.add('open'); }
+function closeExportImport() { document.getElementById('exportModal').classList.remove('open'); }
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'kb_planner_backup_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (data.workouts && data.week) {
+        state = data;
+        save(); renderWeek(); renderWorkouts();
+        closeExportImport();
+        alert('Import erfolgreich!');
+      } else {
+        alert('Ungültige Datei.');
+      }
+    } catch { alert('Fehler beim Import.'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────
+function esc(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function getNum(id, def) { return parseInt(document.getElementById(id)?.value) || def; }
+
+// ─── INIT ────────────────────────────────────────────────────
+renderWeek();
+renderWorkouts();
+renderTimerConfig();
+selectMode('tabata');
+</script>
+</body>
+</html>

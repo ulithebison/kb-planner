@@ -138,6 +138,24 @@ textarea { resize:vertical; min-height:60px; }
 .ex-remove:hover { color:var(--red); }
 .add-ex-btn { width:100%; padding:10px; border:1px dashed var(--border); border-radius:var(--radius-sm); color:var(--txt3); font-size:13px; font-weight:600; transition:all .2s; margin-bottom:6px; }
 .add-ex-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+/* Komplex items */
+.complex-item { background:var(--bg3); border-radius:var(--radius-sm); padding:12px; margin-bottom:6px; border-left:3px solid var(--accent); }
+.complex-header { display:flex; align-items:center; gap:8px; }
+.complex-icon { font-size:16px; }
+.complex-name { font-weight:700; font-size:14px; }
+.complex-meta { font-size:12px; color:var(--txt2); margin-top:2px; }
+.complex-chain { display:flex; flex-wrap:wrap; gap:4px; margin-top:8px; }
+.complex-chain-item { padding:3px 8px; background:var(--bg4); border-radius:6px; font-size:11px; font-weight:600; color:var(--txt2); }
+.complex-chain-arrow { color:var(--txt3); font-size:11px; display:flex; align-items:center; }
+.kx-ex-item { display:flex; align-items:center; gap:8px; padding:8px 10px; background:var(--bg3); border-radius:var(--radius-sm); margin-bottom:4px; }
+.kx-ex-item .kx-num { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--txt3); min-width:20px; }
+.kx-ex-item .kx-name { flex:1; font-size:13px; font-weight:600; }
+.kx-ex-item .kx-reps { font-size:12px; color:var(--txt2); }
+.kx-ex-remove { color:var(--txt3); padding:2px; cursor:pointer; }
+.kx-ex-remove:hover { color:var(--red); }
+.add-ex-btns { display:flex; gap:6px; margin-bottom:6px; }
+.add-ex-btns .add-ex-btn { flex:1; }
 .form-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
 .form-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:8px; }
 .form-group { margin-bottom:8px; }
@@ -381,6 +399,39 @@ textarea { resize:vertical; min-height:60px; }
   </div>
 </div>
 
+<!-- KOMPLEX MODAL -->
+<div class="modal-overlay" id="komplexModal">
+  <div class="modal">
+    <div class="modal-title">
+      <span>Komplex erstellen</span>
+      <button class="modal-close" onclick="closeKomplexModal()"><svg><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Komplex-Name</label>
+      <input id="kxName" placeholder="z.B. Kettlebell Komplex" />
+    </div>
+    <div class="form-row-3">
+      <div><label class="form-label">Runden</label><input id="kxRounds" type="number" min="1" value="5" /></div>
+      <div><label class="form-label">Gewicht (kg)</label><input id="kxWeight" type="number" min="0" value="16" /></div>
+      <div><label class="form-label">Pause (s)</label><input id="kxRest" type="number" min="0" value="90" /></div>
+    </div>
+    <div class="form-group" style="display:flex;align-items:center;gap:10px;">
+      <label style="font-size:13px;font-weight:600;">Links / Rechts getrennt</label>
+      <button id="kxSideToggle" class="btn btn-sm btn-secondary" onclick="toggleKxSide()" style="min-width:50px;">Ja</button>
+    </div>
+    <div class="sec-title" style="margin:12px 0 8px;">Übungskette</div>
+    <div id="kxExerciseList"></div>
+    <div style="display:flex;gap:6px;margin-bottom:12px;">
+      <input id="kxExName" placeholder="Übungsname" style="flex:1;" />
+      <input id="kxExReps" type="number" min="1" value="7" style="width:60px;" placeholder="Wdh" />
+      <button class="btn btn-secondary btn-sm" onclick="addKxExercise()">+</button>
+    </div>
+    <label class="form-label">Schnellauswahl</label>
+    <div class="preset-list" id="kxPresetList"></div>
+    <button class="btn btn-primary btn-block" onclick="saveKomplex()" style="margin-top:12px;">Komplex speichern</button>
+  </div>
+</div>
+
 <!-- WORKOUT DETAIL MODAL (from week view) -->
 <div class="modal-overlay" id="dayDetailModal">
   <div class="modal">
@@ -612,8 +663,28 @@ function renderEditorPhases() {
     const exercises = editorPhases[p.key];
     return `<div class="editor-phase">
       <div class="phase-header ${p.cls}"><span class="phase-label">${p.label}</span></div>
-      ${exercises.map((ex, i) => `
-        <div class="exercise-item">
+      ${exercises.map((ex, i) => {
+        if (ex.type === 'complex') {
+          return `<div class="complex-item">
+            <div class="complex-header">
+              <span class="complex-icon">🔗</span>
+              <div style="flex:1;">
+                <div class="complex-name">${esc(ex.name)}</div>
+                <div class="complex-meta">${ex.rounds} Runden · ${ex.weight}kg · ${ex.rest}s Pause${ex.perSide?' · L/R':''}</div>
+              </div>
+              <button class="ex-remove" onclick="removeExercise('${p.key}',${i})">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div class="complex-chain">
+              ${ex.exercises.map((ce, ci) =>
+                (ci>0?'<span class="complex-chain-arrow">→</span>':'')+
+                `<span class="complex-chain-item">${ce.reps}× ${esc(ce.name)}</span>`
+              ).join('')}
+            </div>
+          </div>`;
+        } else {
+          return `<div class="exercise-item">
           <span class="ex-grip">⠿</span>
           <div class="ex-info">
             <div class="ex-info-name">${esc(ex.name)}</div>
@@ -622,8 +693,13 @@ function renderEditorPhases() {
           <button class="ex-remove" onclick="removeExercise('${p.key}',${i})">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
-        </div>`).join('')}
-      <button class="add-ex-btn" onclick="openExerciseModal('${p.key}')">+ Übung hinzufügen</button>
+        </div>`;
+        }
+      }).join('')}
+      <div class="add-ex-btns">
+        <button class="add-ex-btn" onclick="openExerciseModal('${p.key}')">+ Übung</button>
+        <button class="add-ex-btn" onclick="openKomplexModal('${p.key}')" style="border-color:var(--accent);color:var(--accent);">🔗 Komplex</button>
+      </div>
     </div>`;
   }).join('');
 }
@@ -693,6 +769,89 @@ function addExercise() {
     notes: document.getElementById('exNotes').value.trim()
   });
   closeExerciseModal();
+  renderEditorPhases();
+}
+
+// ─── KOMPLEX MODAL ───────────────────────────────────────────
+let kxExercises = [];
+let kxPerSide = true;
+
+function openKomplexModal(phase) {
+  addingToPhase = phase;
+  kxExercises = [];
+  kxPerSide = true;
+  document.getElementById('kxName').value = '';
+  document.getElementById('kxRounds').value = '5';
+  document.getElementById('kxWeight').value = '16';
+  document.getElementById('kxRest').value = '90';
+  document.getElementById('kxExName').value = '';
+  document.getElementById('kxExReps').value = '7';
+  updateKxSideToggle();
+  renderKxExercises();
+  renderKxPresets();
+  document.getElementById('komplexModal').classList.add('open');
+}
+function closeKomplexModal() { document.getElementById('komplexModal').classList.remove('open'); }
+
+function toggleKxSide() {
+  kxPerSide = !kxPerSide;
+  updateKxSideToggle();
+}
+function updateKxSideToggle() {
+  const btn = document.getElementById('kxSideToggle');
+  btn.textContent = kxPerSide ? 'Ja' : 'Nein';
+  btn.style.background = kxPerSide ? 'var(--accent)' : 'var(--bg3)';
+  btn.style.color = kxPerSide ? '#000' : 'var(--txt2)';
+}
+
+function renderKxPresets() {
+  document.getElementById('kxPresetList').innerHTML = PRESETS.map(p =>
+    `<button class="preset-chip" onclick="document.getElementById('kxExName').value='${p}'">${p}</button>`
+  ).join('');
+}
+
+function renderKxExercises() {
+  const list = document.getElementById('kxExerciseList');
+  if (!kxExercises.length) {
+    list.innerHTML = '<p style="font-size:12px;color:var(--txt3);padding:6px 0;">Noch keine Übungen in der Kette.</p>';
+    return;
+  }
+  list.innerHTML = kxExercises.map((e, i) =>
+    `<div class="kx-ex-item">
+      <span class="kx-num">${i+1}.</span>
+      <span class="kx-name">${esc(e.name)}</span>
+      <span class="kx-reps">${e.reps}×</span>
+      <button class="kx-ex-remove" onclick="removeKxExercise(${i})">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>`
+  ).join('');
+}
+
+function addKxExercise() {
+  const name = document.getElementById('kxExName').value.trim();
+  const reps = parseInt(document.getElementById('kxExReps').value) || 7;
+  if (!name) return;
+  kxExercises.push({ name, reps });
+  document.getElementById('kxExName').value = '';
+  renderKxExercises();
+}
+
+function removeKxExercise(i) { kxExercises.splice(i, 1); renderKxExercises(); }
+
+function saveKomplex() {
+  const name = document.getElementById('kxName').value.trim();
+  if (!name || !kxExercises.length) return;
+  editorPhases[addingToPhase].push({
+    type: 'complex',
+    name,
+    exercises: [...kxExercises],
+    rounds: parseInt(document.getElementById('kxRounds').value) || 5,
+    perSide: kxPerSide,
+    rest: parseInt(document.getElementById('kxRest').value) || 0,
+    weight: parseInt(document.getElementById('kxWeight').value) || 0
+  });
+  closeKomplexModal();
   renderEditorPhases();
 }
 
@@ -1037,12 +1196,27 @@ function openDayDetail(day) {
     html += `<div class="runner-phase">
       <div class="runner-phase-head ${p.cls}"><span class="runner-phase-label">${p.label}</span></div>`;
     wo.phases[p.key].forEach(ex => {
-      html += `<div class="runner-ex">
-        <div class="ex-info">
-          <div class="runner-ex-name">${esc(ex.name)}</div>
-          <div class="runner-ex-detail">${formatExDetail(ex)}</div>
-        </div>
-      </div>`;
+      if (ex.type === 'complex') {
+        html += `<div class="runner-ex" style="border-left:3px solid var(--accent);">
+          <div class="ex-info">
+            <div class="runner-ex-name">🔗 ${esc(ex.name)}</div>
+            <div class="runner-ex-detail">${ex.rounds} Runden · ${ex.weight}kg · ${ex.rest}s Pause${ex.perSide?' · L/R':''}</div>
+            <div class="complex-chain" style="margin-top:6px;">
+              ${ex.exercises.map((ce, ci) =>
+                (ci>0?'<span class="complex-chain-arrow">→</span>':'')+
+                `<span class="complex-chain-item">${ce.reps}× ${esc(ce.name)}</span>`
+              ).join('')}
+            </div>
+          </div>
+        </div>`;
+      } else {
+        html += `<div class="runner-ex">
+          <div class="ex-info">
+            <div class="runner-ex-name">${esc(ex.name)}</div>
+            <div class="runner-ex-detail">${formatExDetail(ex)}</div>
+          </div>
+        </div>`;
+      }
     });
     html += '</div>';
   });
@@ -1066,7 +1240,7 @@ function startWorkoutFromDay() {
   const woId = state.week[currentDetailDay];
   const wo = woId ? state.workouts.find(w => w.id === woId) : null;
   if (!wo) return;
-  // Build flat exercise list + steps (one per set)
+  // Build flat exercise list + steps
   runnerExercises = [];
   woSteps = [];
   const phases = [
@@ -1078,15 +1252,45 @@ function startWorkoutFromDay() {
     wo.phases[p.key].forEach((ex, ei) => {
       const exIdx = runnerExercises.length;
       runnerExercises.push({ ...ex, phase:p.key, phaseLabel:p.label, phaseCls:p.cls, done:false });
-      const sets = Math.max(ex.sets || 1, 1);
-      for (let s = 1; s <= sets; s++) {
-        woSteps.push({
-          exIdx, set:s, totalSets:sets,
-          name:ex.name, reps:ex.reps||0, duration:ex.duration||0,
-          rest:ex.rest||0, weight:ex.weight||0,
-          phase:p.key, phaseLabel:p.label, phaseCls:p.cls,
-          notes:ex.notes||''
-        });
+
+      if (ex.type === 'complex') {
+        // Complex: generate steps per round, per side, per chain exercise
+        const rounds = Math.max(ex.rounds || 1, 1);
+        const sides = ex.perSide ? ['Links', 'Rechts'] : [null];
+        for (let r = 1; r <= rounds; r++) {
+          sides.forEach((side, si) => {
+            ex.exercises.forEach((ce, ci) => {
+              const isLastInChain = ci === ex.exercises.length - 1;
+              const isLastSide = si === sides.length - 1;
+              const isLastRound = r === rounds;
+              // Rest only after the very last exercise of the last side in a round (not after last round)
+              let stepRest = 0;
+              if (isLastInChain && isLastSide && !isLastRound) stepRest = ex.rest || 0;
+              woSteps.push({
+                exIdx, isComplex:true,
+                complexName:ex.name, round:r, totalRounds:rounds,
+                side, name:ce.name, reps:ce.reps||0, duration:0,
+                rest:stepRest, weight:ex.weight||0,
+                phase:p.key, phaseLabel:p.label, phaseCls:p.cls,
+                chainPos:ci+1, chainTotal:ex.exercises.length,
+                notes:''
+              });
+            });
+          });
+        }
+      } else {
+        // Regular exercise: one step per set
+        const sets = Math.max(ex.sets || 1, 1);
+        for (let s = 1; s <= sets; s++) {
+          woSteps.push({
+            exIdx, isComplex:false,
+            set:s, totalSets:sets,
+            name:ex.name, reps:ex.reps||0, duration:ex.duration||0,
+            rest:ex.rest||0, weight:ex.weight||0,
+            phase:p.key, phaseLabel:p.label, phaseCls:p.cls,
+            notes:ex.notes||''
+          });
+        }
       }
     });
   });
@@ -1111,21 +1315,39 @@ function renderRunnerList() {
     }
     const isActive = woPhase !== 'idle' && woPhase !== 'done' && woSteps[woStepIdx]?.exIdx === i;
     const isDone = ex.done;
-    html += `<div class="runner-ex${isActive?' active':''}${isDone?' completed':''}">
-      <div class="runner-ex-check ${isDone?'done':''}">
-        ${isDone?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':''}
-      </div>
-      <div class="runner-ex-info">
-        <div class="runner-ex-name${isDone?' done':''}">${esc(ex.name)}</div>
-        <div class="runner-ex-detail">${formatExDetail(ex)}</div>
-      </div>
-    </div>`;
+    if (ex.type === 'complex') {
+      // Show complex with chain and current round info
+      let roundInfo = '';
+      if (isActive) {
+        const step = woSteps[woStepIdx];
+        roundInfo = `<div style="font-size:11px;color:var(--accent);margin-top:4px;font-weight:600;">▶ Runde ${step.round}/${step.totalRounds}${step.side?' · '+step.side:''} · ${step.name}</div>`;
+      }
+      html += `<div class="runner-ex${isActive?' active':''}${isDone?' completed':''}" style="border-left:3px solid var(--accent);">
+        <div class="runner-ex-check ${isDone?'done':''}">
+          ${isDone?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':''}
+        </div>
+        <div class="runner-ex-info">
+          <div class="runner-ex-name${isDone?' done':''}">🔗 ${esc(ex.name)}</div>
+          <div class="runner-ex-detail">${ex.rounds} Runden · ${ex.weight}kg · ${ex.exercises.map(e=>e.name).join(' → ')}${ex.perSide?' · L/R':''}</div>
+          ${roundInfo}
+        </div>
+      </div>`;
+    } else {
+      html += `<div class="runner-ex${isActive?' active':''}${isDone?' completed':''}">
+        <div class="runner-ex-check ${isDone?'done':''}">
+          ${isDone?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':''}
+        </div>
+        <div class="runner-ex-info">
+          <div class="runner-ex-name${isDone?' done':''}">${esc(ex.name)}</div>
+          <div class="runner-ex-detail">${formatExDetail(ex)}</div>
+        </div>
+      </div>`;
+    }
   });
   if (woPhase === 'done') {
     html += `<div style="text-align:center;padding:20px;"><span style="font-size:32px;">🎉</span><div style="font-weight:700;font-size:16px;margin-top:8px;">Workout abgeschlossen!</div></div>`;
   }
   container.innerHTML = html;
-  // scroll active into view
   const activeEl = container.querySelector('.runner-ex.active');
   if (activeEl) activeEl.scrollIntoView({ behavior:'smooth', block:'center' });
 }
@@ -1205,10 +1427,13 @@ function beginRestPhase() {
 }
 
 function advanceStep() {
-  // Mark exercise done if this was the last set
   const step = woSteps[woStepIdx];
-  if (step.set === step.totalSets) {
-    runnerExercises[step.exIdx].done = true;
+  if (step.isComplex) {
+    // Mark complex done when we're at the last step of the last round
+    const isLastStepOfComplex = !woSteps[woStepIdx+1] || woSteps[woStepIdx+1]?.exIdx !== step.exIdx;
+    if (isLastStepOfComplex) runnerExercises[step.exIdx].done = true;
+  } else {
+    if (step.set === step.totalSets) runnerExercises[step.exIdx].done = true;
   }
   woStepIdx++;
   if (woStepIdx >= woSteps.length) {
@@ -1239,19 +1464,29 @@ function updateRunnerTimerUI() {
   const badgeEl = document.getElementById('runnerPhaseBadge');
   badgeEl.innerHTML = `<span class="badge badge-${step.phaseCls}">${step.phaseLabel}</span>`;
   // Exercise name
-  document.getElementById('runnerExName').textContent = step.name;
-  // Set info
-  let setTxt = step.totalSets > 1 ? `Satz ${step.set} / ${step.totalSets}` : '';
-  if (step.reps > 0) setTxt += (setTxt?' · ':'') + step.reps + ' Wdh';
-  if (step.weight > 0) setTxt += (setTxt?' · ':'') + step.weight + 'kg';
-  document.getElementById('runnerSetInfo').textContent = setTxt;
+  if (step.isComplex) {
+    document.getElementById('runnerExName').textContent = step.name;
+    // Set info: round, side, chain position
+    let info = `Runde ${step.round}/${step.totalRounds}`;
+    if (step.side) info += ` · ${step.side}`;
+    info += ` · Schritt ${step.chainPos}/${step.chainTotal}`;
+    if (step.reps > 0) info += ` · ${step.reps} Wdh`;
+    if (step.weight > 0) info += ` · ${step.weight}kg`;
+    document.getElementById('runnerSetInfo').textContent = info;
+  } else {
+    document.getElementById('runnerExName').textContent = step.name;
+    let setTxt = step.totalSets > 1 ? `Satz ${step.set} / ${step.totalSets}` : '';
+    if (step.reps > 0) setTxt += (setTxt?' · ':'') + step.reps + ' Wdh';
+    if (step.weight > 0) setTxt += (setTxt?' · ':'') + step.weight + 'kg';
+    document.getElementById('runnerSetInfo').textContent = setTxt;
+  }
   // Timer
   const timeEl = document.getElementById('runnerTimerTime');
   const phaseEl = document.getElementById('runnerTimerPhase');
   const progEl = document.getElementById('runnerTimerProgress');
 
   if (woPhase === 'work') {
-    phaseEl.textContent = step.duration > 0 ? 'WORK' : 'REPS';
+    phaseEl.textContent = step.duration > 0 ? 'WORK' : (step.isComplex && step.side ? step.side.toUpperCase() : 'REPS');
     phaseEl.className = 'timer-phase-label work';
     if (step.duration > 0) {
       timeEl.textContent = fmtTime(woCountdown);
@@ -1273,8 +1508,9 @@ function updateRunnerTimerUI() {
   }
   // Overall progress
   const totalSteps = woSteps.length;
-  const overallProg = document.getElementById('runnerPhaseBadge');
-  overallProg.innerHTML += ` <span style="font-size:11px;color:var(--txt3);margin-left:8px;">Schritt ${woStepIdx+1}/${totalSteps}</span>`;
+  badgeEl.innerHTML += ` <span style="font-size:11px;color:var(--txt3);margin-left:8px;">Schritt ${woStepIdx+1}/${totalSteps}</span>`;
+  // Update exercise list to show current position
+  renderRunnerList();
 }
 
 function toggleWorkoutTimer() {
